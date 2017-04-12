@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Index
+{% endblock %}
+
+{% block main %}
+    <div>
+        <h2> Your stock portfolio looks as follows: </h2>
+        <div>
+            <table style="width:100%;">
+              <tr>
+                <th>stocks you owns</th>
+                <th>the numbers of shares owned</th> 
+                <th>the current price of each stock</th>
+                <th>total value of each holding</th>
+              </tr>
+              {% for stock in stocks %}
+             <tr>
+                <td> {{ stock }} </td>
+                    {% for i in range(5) %}
+                <td> {{ stocks[stock][i] }} </td>
+                    {% endfor %}
+             </tr>
+              {% endfor %}
+            </table>
+            <h4 style="color:green;"> Your total cash: {{ message1 }} </h4>
+            <h4 style="color:green;"> The total value of stocks and cash: {{ message2 }} </h4>
+        </div>
+        <table>
+
+        </table>
+        
+    </div>
+{% endblock %}

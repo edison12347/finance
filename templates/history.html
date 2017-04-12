@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    History
+{% endblock %}
+
+{% block main %}
+    <div>
+        <h2> Hear is your transaction history: </h2>
+        <div>
+            <table style="width:100%;">
+              <tr>
+                <th>Stock name</th>
+                <th>Number of shares</th> 
+                <th>Price of each stock</th>
+                <th>Total price</th>
+                <th>Transaction type</th>
+                <th>Time</th>
+                
+              </tr>
+              {% for stock in stocks %}
+             <tr>
+                    {% for i in range(6) %}
+                <td> {{ stock[i] }} </td>
+                    {% endfor %}
+             </tr>
+              {% endfor %}
+            </table>
+            <h4 style="color:green;"> {{ message1 }} </h4>
+        </div>
+        <table>
+
+        </table>
+        
+    </div>
+{% endblock %}
