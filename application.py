@@ -43,9 +43,9 @@ def index():
     """
     # REV: by the style guidelines, each function should start with the docstring:
     # get amount of cash and stocks from db
-    user_id = session['user_id'][0]
+    user_id = session['user_id']
     cash_query = db.execute("SELECT cash FROM users WHERE id = :id", id=user_id) # is it ok or костыль? # Зис из вери мач Костыль
-    cash = dict(cash_query)["cash"]
+    cash = dict(cash_query[0])["cash"]
     stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = {id} GROUP BY stock", id=user_id)
     # REV: the way know the named placeholders should be writen as {id} ref> https://docs.python.org/3/library/string.html#formatstrings
     # create a list that can be transformed into table on the html page
