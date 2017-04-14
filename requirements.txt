@@ -34,7 +34,6 @@ six==1.10.0
 termcolor==1.1.0
 traitlets==4.3.2
 twython==3.4.0
-unattended-upgrades==0.1
 urllib3==1.7.1
 virtualenv==15.1.0
 wheel==0.24.0
