@@ -28,7 +28,6 @@ pycurl==7.19.3
 pytz==2016.10
 requests==2.13.0
 requests-oauthlib==0.8.0
-scipy==0.13.3
 simplegeneric==0.8.1
 six==1.10.0
 termcolor==1.1.0
