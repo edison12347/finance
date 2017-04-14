@@ -72,7 +72,7 @@ def index():
                            stocks=table)
 
 
-@app.route("/buy", methods=["POST"])
+@app.route("/buy", methods=["GET", "POST"])
 @login_required
 def buy():
     """Buy shares of stock."""
@@ -131,7 +131,7 @@ def history():
     return render_template("history.html", stocks=table)
 
 
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in."""
 
@@ -182,7 +182,7 @@ def logout():
     return redirect(url_for("login"))
 
 
-@app.route("/quote", methods=["POST"])
+@app.route("/quote", methods=["GET", "POST"])
 @login_required
 def quote():
     """Get stock quote."""
@@ -201,7 +201,7 @@ def quote():
     return render_template("quote.html")
 
 
-@app.route("/register", methods=["POST"])
+@app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user."""
 
@@ -241,7 +241,7 @@ def register():
         return render_template("register.html")
 
 
-@app.route("/sell", methods=["POST"])
+@app.route("/sell", methods=["GET", "POST"])
 @login_required
 def sell():
     """Sell shares of stock."""
@@ -284,7 +284,7 @@ def sell():
         return render_template("sell.html")
 
 
-@app.route("/reset_password", methods=["POST"])
+@app.route("/reset_password", methods=["GET", "POST"])
 def reset_password():
     """Register user."""
 
