@@ -36,15 +36,18 @@ db = SQL("sqlite:///finance.db")
 @app.route("/")
 @login_required
 def index():
-    
-    # Display the user’s current cash balance along with a grand total,
-    # stocks the user owns, the numbers of shares owned, the current price of each stock, and the total value of each holding
-    
-    # get amount of cahs and stocks from db 
-    cash = dict(db.execute("SELECT cash FROM users WHERE id = :id", id=session['user_id'])[0])["cash"] # is it ok or костыль?
-    
-    stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = :id GROUP BY stock", id=session['user_id'])
-    
+    """
+    Display the user's current cash balance along with a grand total,
+    stocks the user owns, the numbers of shares owned, the current price of each stock, and the total value of each holding
+    :return: 
+    """
+    # REV: by the style guidelines, each function should start with the docstring:
+    # get amount of cash and stocks from db
+    user_id = session['user_id']
+    cash_query = db.execute("SELECT cash FROM users WHERE id = :id", id=user_id) # is it ok or костыль? # Зис из вери мач Костыль
+    cash = dict(cash_query[0])["cash"]
+    stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = {id} GROUP BY stock", id=user_id)
+    # REV: the way know the named placeholders should be writen as {id} ref> https://docs.python.org/3/library/string.html#formatstrings
     # create a list that can be transformed into table on the html page
     table = {}
     values = []
@@ -53,15 +56,18 @@ def index():
         qty = dict(stock)['SUM(num_stocks)']
         price = lookup(name)["price"]
         value = qty * price
-        table [name] = qty, price, value
+        table[name] = qty, price, value
 
         for i in table:
-            values.append(table[i][2]) # already forgot what it was
+            values.append(table[i][2])  # already forgot what it was
             
     grand_total = cash + sum(values)
        
-    return render_template("index.html", message1 = "{0:.2f}".format(cash) \
-                            + " stock", message2 = "{0:.2f}".format(grand_total) + " USD", stocks = table  )
+    return render_template("index.html",
+                           cash="{0:.2f} stock".format(cash),
+                           grand_total="{0:.2f} USD".format(grand_total),
+                           stocks=table)
+    # REV: This increases readability
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -72,12 +78,12 @@ def buy():
         
         # validate input
         if lookup(request.form.get("stock")) is None:
-            return render_template("buy.html",  message_stock = "Sorry no such stock")
+            return render_template("buy.html",  message_stock="Sorry no such stock")
         try:
             if int(request.form.get("shares")) <= 0:
-                return render_template("buy.html",  message_stock = "You should buy at least one stock")
+                return render_template("buy.html",  message_stock="You should buy at least one stock")
         except ValueError:
-            return render_template("buy.html",  message_stock = "You should buy at least one stock")
+            return render_template("buy.html",  message_stock="You should buy at least one stock")
             
         stock, shares, price, paid, time, cash = get_transaction_param()
         
@@ -90,11 +96,13 @@ def buy():
         
         # add transaction 
         db.execute("INSERT INTO transactions (id, user_id, stock, num_stocks, price, time, paid, type) \
-                    VALUES (NULL,:user_id, :stock, :num_stocks, :price, :time, :paid, 'BUY')",\
-                    user_id=session['user_id'], stock=stock, num_stocks=shares, price=price, time=str(time), paid=paid)
-        
-        return render_template("buy.html",  message_shares = "You bought " \
-                                + "{0:.2f}".format(paid) + " USD worth of " + str(stock) + " shares " + str(time))  
+                    VALUES (NULL,:user_id, :stock, :num_stocks, :price, :time, :paid, 'BUY')",
+                   user_id=session['user_id'], stock=stock, num_stocks=shares, price=price, time=str(time), paid=paid)
+
+        return render_template("buy.html",
+                               message_shares="You bought {paid:.2f} USD worth of {stock} shares {time}"
+                               .format(paid=paid, stock=stock, time=str(time)))
+        # REV: Don't concatinate strings like this, instead use one string with multiple named placeholders
 
     else:
         return render_template("buy.html")
@@ -103,14 +111,17 @@ def buy():
 @app.route("/history")
 @login_required
 def history():
-    
-    """Show history of transactions."""
-    # Displays an HTML table summarizing all of a user’s transactions ever, listing row by row each and every buy and every sell
-    stocks = db.execute("SELECT stock, num_stocks, price, paid, type, time FROM transactions WHERE user_id = :id", id=session['user_id']) 
-    
-    # create a list that can be transformed into table on the html page
-    table = []
+    """
+    Show history of transactions. Displays an HTML table summarizing all of a user's transactions ever, 
+    listing row by row each and every buy and every sell
+    """
+    stocks = db.execute("SELECT stock, num_stocks, price, paid, type, time FROM transactions WHERE user_id = :id",
+                        id=session['user_id'])
+    # REV: не стоит нарушать рекомендацию по длине сткоки в 120 символов.
+    # I need to understand the db.execute better to refactor these calls
 
+    # create a dict that can be transformed into table on the html page
+    table = []
     for stock in stocks:
         name = dict(stock)['stock']
         qty = dict(stock)['num_stocks']
@@ -118,10 +129,11 @@ def history():
         value = dict(stock)['paid']
         type_ = dict(stock)['type']
         time = dict(stock)['time']
-        table.append([name, qty, price, value, type_, time])
+        table.append([name, qty, price, value, type_, time])  # REV: Why type_ ?
 
-    return render_template("history.html", stocks = table)
+    return render_template("history.html", stocks=table)
     # return apology("TODO")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -132,21 +144,24 @@ def login():
 
     # if user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
 
         # ensure username was submitted
-        if not request.form.get("username"):
+        if not username:
             return apology("must provide username")
 
         # ensure password was submitted
-        elif not request.form.get("password"):
+        elif not password:
             return apology("must provide password")
 
         # query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = :username", username=request.form.get("username"))
+        rows = db.execute("SELECT * FROM users WHERE username = :username", username=username)
+        # REV - what is rows ? Maybe rename it to something useful, e.g. user_query, user_search ...
 
         # ensure username exists and password is correct
-        if len(rows) != 1 or not pwd_context.verify(request.form.get("password"), rows[0]["hash"]):
-            return render_template("login.html", message = "invalid username and/or password")
+        if len(rows) != 1 or not pwd_context.verify(password, rows[0]["hash"]):
+            return render_template("login.html", message="invalid username and/or password")
 
         # remember which user has logged in
         session["user_id"] = rows[0]["id"]
@@ -157,8 +172,10 @@ def login():
     # else if user reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("login.html")
+# REV: each function of class definition must have 2 blank spaces between them
 
-@app.route("/logout")
+
+@app.route("/logout") # REV: Method GET ?
 def logout():
     """Log user out."""
 
@@ -174,13 +191,12 @@ def logout():
 def quote():
     """Get stock quote."""
     if request.method == "POST":
-        
-        if not request.form.get("stock"):
-                  return render_template("quote.html",  message_error="enter stock symbol")
-                  
+        user_input_stock = request.form.get("stock")
+        if not user_input_stock:
+            return render_template("quote.html",  message_error="enter stock symbol")
         else:
-            stock = lookup(request.form.get("stock"))
-            return render_template("quoted.html", message = stock["symbol"] +  " stock price: " + str(stock["price"]) + " USD")
+            stock = lookup(user_input_stock)
+            return render_template("quoted.html", message=stock["symbol"] +  " stock price: " + str(stock["price"]) + " USD") #reformat
     
     return render_template("quote.html")
 
@@ -188,8 +204,9 @@ def quote():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user."""
-    
-     # if user reached route via POST (as by submitting a form via POST)
+    # if user reached route via POST (as by submitting a form via POST)
+    # REV: what happens if request.method = GET?
+    # REV: refactor with variables for username, password, etc.
     if request.method == "POST":
 
         # ensure username was submitted
@@ -206,12 +223,12 @@ def register():
             
         # check if user name in db
         user = db.execute("SELECT username FROM users WHERE username = :username", username=request.form.get("username")) 
-        if len(user) != 0: 
-           return render_template("register.html", message_user="user allready exist", message_pas = "whant to rest the password?" ) 
+        if len(user) != 0:  # REV: maybe make it positive ? if == 0 >> register user, else >> 'user already exist'
+            return render_template("register.html", message_user="user already exists", message_pas="whant to rest the password?")
             
         # insert user data into the database 
         db.execute("INSERT INTO users (id, username, hash) VALUES (NULL,:username ,:password)",
-        username=request.form.get("username"), password=pwd_context.encrypt(request.form.get("password")) )
+                   username=request.form.get("username"), password=pwd_context.encrypt(request.form.get("password")))
         
         # redirect user to home page
         return render_template("success.html", action = "Register")
@@ -236,31 +253,31 @@ def sell():
             if int(request.form.get("shares")) <= 0:
                 return render_template("sell.html",  message_stock = "You should sell at least one stock")
         except ValueError: 
-            return render_template("sell.html",  message_stock = "You should sell at least one stock")
-            
+            return render_template("sell.html",  message_stock = "Please enter valid Number of stocks")
+
         stock, shares, price, paid, time, cash = get_transaction_param()
         
         #check stocks and shares avalible
         stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = :id \
                             AND stock=:stock GROUP BY stock", id=session['user_id'], stock=stock)
         try:
-            shares_owned = dict(stocks[0])['SUM(num_stocks)']
+            shares_owned = dict(stocks[0])['SUM(num_stocks)']  # REV: I do not know what is 'Sum()'...
             if len(stocks) == 0 or shares_owned == 0 or shares > shares_owned:
                 return apology("You don't have enough of this stock")
         except IndexError:
             return apology("You don't have this stock")
-
-        # update cahs in users db
+        # REV: This should be done only if the condition above was met, isn't it? Should be moved into the upped if
+        # update cash in users db
         db.execute("UPDATE users SET cash = :cash WHERE id = :id;", cash = cash + paid, id=session['user_id'])
         
         # add transaction 
         db.execute("INSERT INTO transactions (id, user_id, stock, num_stocks, price, time, paid, type) \
-                     VALUES (NULL,:user_id, :stock, :num_stocks, :price, :time, :paid, 'SELL')",\
-                    user_id=session['user_id'], stock=stock, num_stocks= -shares, price=price, time=str(time), paid= -paid)
-        check = dict(stocks[0])['SUM(num_stocks)']
+                     VALUES (NULL,:user_id, :stock, :num_stocks, :price, :time, :paid, 'SELL')",
+                   user_id=session['user_id'], stock=stock, num_stocks=-shares, price=price, time=str(time), paid=-paid)
+        check = dict(stocks[0])['SUM(num_stocks)']  # REV: value never used.
         
         return render_template("sell.html",  message_shares = "You sold " \
-                                + str(paid) + " USD worth of " + str(stock) + " shares " + str(time))   
+                                + str(paid) + " USD worth of " + str(stock) + " shares " + str(time))  # reformat
     else:
         return render_template("sell.html")
 
@@ -268,7 +285,7 @@ def sell():
 @app.route("/reset_password", methods=["GET", "POST"])
 def reset_password():
     """Register user."""
-    
+
      # if user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
         
@@ -290,7 +307,7 @@ def reset_password():
             return render_template("reset_password.html", message_pas="user doesn't exist") 
         # insert user data into the database 
         db.execute("UPDATE users SET hash = :password WHERE username = :username;", \
-                    password = pwd_context.encrypt(request.form.get("password")), username=request.form.get("username"))
+                    password=pwd_context.encrypt(request.form.get("password")), username=request.form.get("username"))
                     
         return render_template("success.html", action = "Password reset")
 
@@ -307,5 +324,4 @@ def get_transaction_param():
     paid = price * shares
     time = datetime.datetime.now()
     cash = dict(db.execute("SELECT cash FROM users WHERE id = :id", id=session['user_id'])[0])["cash"] # figure out this dict костыль
-    return (stock, shares, price, paid, time, cash)
-    
+    return stock, shares, price, paid, time, cash
