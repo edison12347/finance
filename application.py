@@ -152,7 +152,7 @@ def login():
             return apology("must provide password")
 
         # query database for users info
-        users_info = db.execute("SELECT * FROM users WHERE username = :username".format(username=username))
+        users_info = db.execute("SELECT * FROM users WHERE username = {username}".format(username=username))
 
         # ensure username exists and password is correct
         users_password = get_query_with_key(users_info, "hash")
@@ -224,13 +224,13 @@ def register():
             return render_template("register.html", message_pas="password doesn't mach")
 
         # check if username in db
-        user = db.execute("SELECT username FROM users WHERE username = :username".format(username=username_input))
+        user = db.execute("SELECT username FROM users WHERE username = {username}".format(username=username_input))
         if len(user) != 0:
             return render_template("register.html", message_user="user already exist",
                                    message_pas="want to reset the password?")
 
             # insert user data into the database
-        db.execute("INSERT INTO users (id, username, hash) VALUES (NULL,:username ,:password)".format(
+        db.execute("INSERT INTO users (id, username, hash) VALUES (NULL,{username},{password})".format(
                    username=username_input, password=pwd_context.encrypt(password_input)))
 
         # redirect user to home page
@@ -261,8 +261,8 @@ def sell():
         stock, shares, price, paid, time, cash = get_transaction_param()
 
         # check stocks and shares avalible
-        stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = :id \
-                            AND stock=:stock GROUP BY stock".format(id=session['user_id'], stock=stock))
+        stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = {id} \
+                            AND stock={stock} GROUP BY stock".format(id=session['user_id'], stock=stock))
         try:
             shares_owned = get_query_with_key(stocks, 'SUM(num_stocks)')
             if len(stocks) == 0 or shares_owned == 0 or shares > shares_owned:
@@ -307,13 +307,13 @@ def reset_password():
             return render_template("reset_password.html", message_pas="password doesn't mach")
 
         # check if user name in db
-        user = db.execute("SELECT username FROM users WHERE username = :username".format(
+        user = db.execute("SELECT username FROM users WHERE username = {username}".format(
                           username=username_input))
 
         if len(user) == 0:
             return render_template("reset_password.html", message_pas="user doesn't exist")
             # insert user data into the database
-        db.execute("UPDATE users SET hash = :password WHERE username = :username;".format(
+        db.execute("UPDATE users SET hash = :password WHERE username = {username};".format(
                    password=pwd_context.encrypt(password_input), username=username_input))
 
         return render_template("success.html", action="Password reset")
