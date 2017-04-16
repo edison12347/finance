@@ -46,7 +46,7 @@ def index():
 
     # get amount of cash and stocks from db
     user_id = session['user_id']
-    cash_query = db.execute("SELECT cash FROM users WHERE id = {id}", id=user_id)
+    cash_query = db.execute("SELECT cash FROM users WHERE id = {id}".format(id=user_id))
     cash = get_query_with_key(cash_query, "cash")
     stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = {id} GROUP BY stock",
                         id=user_id)
