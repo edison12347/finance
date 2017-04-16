@@ -46,9 +46,9 @@ def index():
 
     # get amount of cash and stocks from db
     user_id = session['user_id']
-    cash_query = db.execute("SELECT cash FROM users WHERE id = {id}".format(id=user_id))
+    cash_query = db.execute("SELECT cash FROM users WHERE id = '{id}'".format(id=user_id))
     cash = get_query_with_key(cash_query, "cash")
-    stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = {id} GROUP BY stock".format(
+    stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = '{id}' GROUP BY stock".format(
                         id=user_id))
 
     # create a list that can be transformed into table on the html page
@@ -94,11 +94,11 @@ def buy():
             return apology("You don't have enough cash")
 
         # update cahs in users db
-        db.execute("UPDATE users SET cash = {cash} WHERE id = {id};".format(cash=cash - paid, id=session['user_id']))
+        db.execute("UPDATE users SET cash = '{cash}' WHERE id = '{id}';".format(cash=cash - paid, id=session['user_id']))
 
         # add transaction 
         db.execute("INSERT INTO transactions (id, user_id, stock, num_stocks, price, time, paid, type) \
-                    VALUES (NULL, {user_id}, {stock}, {num_stocks}, {price}, {time}, {paid}, 'BUY')".format(
+                    VALUES (NULL, '{user_id}', '{stock}', '{num_stocks}', '{price}', '{time}', '{paid}', 'BUY')".format(
                    user_id=session['user_id'], stock=stock, num_stocks=shares, price=price, time=str(time), paid=paid))
 
         return render_template("buy.html",
@@ -115,7 +115,7 @@ def history():
     Shows history of transactions. Displays an HTML table summarizing all of a user’s transactions ever,
     listing row by row each and every buy and every sell
     """
-    stocks = db.execute("SELECT stock, num_stocks, price, paid, type, time FROM transactions WHERE user_id = {id}"
+    stocks = db.execute("SELECT stock, num_stocks, price, paid, type, time FROM transactions WHERE user_id = '{id}'"
         .format(id=session['user_id']))
     # create a list that can be transformed into table on the html page
     table = []
@@ -152,7 +152,7 @@ def login():
             return apology("must provide password")
 
         # query database for users info
-        users_info = db.execute("SELECT * FROM users WHERE username = {username}".format(username=username))
+        users_info = db.execute("SELECT * FROM users WHERE username = '{username}'".format(username=username))
 
         # ensure username exists and password is correct
         users_password = get_query_with_key(users_info, "hash")
@@ -224,13 +224,13 @@ def register():
             return render_template("register.html", message_pas="password doesn't mach")
 
         # check if username in db
-        user = db.execute("SELECT username FROM users WHERE username = {username}".format(username=username_input))
+        user = db.execute("SELECT username FROM users WHERE username = '{username}'".format(username=username_input))
         if len(user) != 0:
             return render_template("register.html", message_user="user already exist",
                                    message_pas="want to reset the password?")
 
             # insert user data into the database
-        db.execute("INSERT INTO users (id, username, hash) VALUES (NULL,{username},{password})".format(
+        db.execute("INSERT INTO users (id, username, hash) VALUES (NULL,'{username}','{password}')".format(
                    username=username_input, password=pwd_context.encrypt(password_input)))
 
         # redirect user to home page
@@ -261,8 +261,8 @@ def sell():
         stock, shares, price, paid, time, cash = get_transaction_param()
 
         # check stocks and shares avalible
-        stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = {id} \
-                            AND stock={stock} GROUP BY stock".format(id=session['user_id'], stock=stock))
+        stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = '{id}' \
+                            AND stock = '{stock}' GROUP BY stock".format(id=session['user_id'], stock=stock))
         try:
             shares_owned = get_query_with_key(stocks, 'SUM(num_stocks)')
             if len(stocks) == 0 or shares_owned == 0 or shares > shares_owned:
@@ -271,11 +271,11 @@ def sell():
             return apology("You don't have this stock")
 
         # update cash in users db
-        db.execute("UPDATE users SET cash = {cash} WHERE id = {id};".format(cash=cash + paid, id=session['user_id']))
+        db.execute("UPDATE users SET cash = '{cash}' WHERE id = '{id}';".format(cash=cash + paid, id=session['user_id']))
 
         # add transaction 
         db.execute("INSERT INTO transactions (id, user_id, stock, num_stocks, price, time, paid, type) \
-                     VALUES (NULL, {user_id}, {stock}, {num_stocks}, {price}, {time}, {paid}, 'SELL')".format(
+                     VALUES (NULL, '{user_id}', '{stock}', '{num_stocks}', '{price}', '{time}', '{paid}', 'SELL')".format(
                    user_id=session['user_id'], stock=stock, num_stocks=-shares, price=price, time=str(time), paid=-paid))
 
         return render_template("sell.html", massage_shares="You sold {paid} USD worth of {stock} shares {time}"
@@ -307,13 +307,13 @@ def reset_password():
             return render_template("reset_password.html", message_pas="password doesn't mach")
 
         # check if user name in db
-        user = db.execute("SELECT username FROM users WHERE username = {username}".format(
+        user = db.execute("SELECT username FROM users WHERE username = '{username}'".format(
                           username=username_input))
 
         if len(user) == 0:
             return render_template("reset_password.html", message_pas="user doesn't exist")
             # insert user data into the database
-        db.execute("UPDATE users SET hash = :password WHERE username = {username};".format(
+        db.execute("UPDATE users SET hash = '{password}' WHERE username = '{username}';".format(
                    password=pwd_context.encrypt(password_input), username=username_input))
 
         return render_template("success.html", action="Password reset")
@@ -329,7 +329,7 @@ def get_transaction_param():
     price = lookup(request.form.get("stock"))["price"]
     paid = price * shares
     time = datetime.datetime.now()
-    cash = get_query_with_key(db.execute("SELECT cash FROM users WHERE id = {id}".format(id=session['user_id'])), "cash")
+    cash = get_query_with_key(db.execute("SELECT cash FROM users WHERE id = '{id}'".format(id=session['user_id'])), "cash")
     return stock, shares, price, paid, time, cash
 
 
