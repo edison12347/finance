@@ -49,7 +49,7 @@ def index():
     cash_query = db.execute("SELECT cash FROM users WHERE id = '{id}'".format(id=user_id))
     cash = get_query_with_key(cash_query, "cash")
     stocks = db.execute("SELECT stock, SUM(num_stocks) FROM transactions WHERE user_id = '{id}' GROUP BY stock".format(
-                        id=user_id))
+        id=user_id))
 
     # create a list that can be transformed into table on the html page
     table = {}
@@ -94,12 +94,13 @@ def buy():
             return apology("You don't have enough cash")
 
         # update cahs in users db
-        db.execute("UPDATE users SET cash = '{cash}' WHERE id = '{id}';".format(cash=cash - paid, id=session['user_id']))
+        db.execute(
+            "UPDATE users SET cash = '{cash}' WHERE id = '{id}';".format(cash=cash - paid, id=session['user_id']))
 
         # add transaction 
         db.execute("INSERT INTO transactions (id, user_id, stock, num_stocks, price, time, paid, type) \
                     VALUES (NULL, '{user_id}', '{stock}', '{num_stocks}', '{price}', '{time}', '{paid}', 'BUY')".format(
-                   user_id=session['user_id'], stock=stock, num_stocks=shares, price=price, time=str(time), paid=paid))
+            user_id=session['user_id'], stock=stock, num_stocks=shares, price=price, time=str(time), paid=paid))
 
         return render_template("buy.html",
                                message_shares="You bought {paid:.2f} USD worth of {stock} shares {time}"
@@ -116,7 +117,7 @@ def history():
     listing row by row each and every buy and every sell
     """
     stocks = db.execute("SELECT stock, num_stocks, price, paid, type, time FROM transactions WHERE user_id = '{id}'"
-        .format(id=session['user_id']))
+                        .format(id=session['user_id']))
     # create a list that can be transformed into table on the html page
     table = []
     for stock in stocks:
@@ -231,7 +232,7 @@ def register():
 
             # insert user data into the database
         db.execute("INSERT INTO users (id, username, hash) VALUES (NULL,'{username}','{password}')".format(
-                   username=username_input, password=pwd_context.encrypt(password_input)))
+            username=username_input, password=pwd_context.encrypt(password_input)))
 
         # redirect user to home page
         return render_template("success.html", action="Register")
@@ -271,15 +272,17 @@ def sell():
             return apology("You don't have this stock")
 
         # update cash in users db
-        db.execute("UPDATE users SET cash = '{cash}' WHERE id = '{id}';".format(cash=cash + paid, id=session['user_id']))
+        db.execute(
+            "UPDATE users SET cash = '{cash}' WHERE id = '{id}';".format(cash=cash + paid, id=session['user_id']))
 
         # add transaction 
         db.execute("INSERT INTO transactions (id, user_id, stock, num_stocks, price, time, paid, type) \
                      VALUES (NULL, '{user_id}', '{stock}', '{num_stocks}', '{price}', '{time}', '{paid}', 'SELL')".format(
-                   user_id=session['user_id'], stock=stock, num_stocks=-shares, price=price, time=str(time), paid=-paid))
+            user_id=session['user_id'], stock=stock, num_stocks=-shares, price=price, time=str(time), paid=-paid))
 
-        return render_template("sell.html", massage_shares="You sold {paid} USD worth of {stock} shares {time}"
-                               .format(paid=paid, stock=stock, time=time))
+        return render_template("sell.html",
+                               message_shares="You sold {paid:.2f} USD worth of {stock} shares {time}"
+                               .format(paid=paid, stock=stock, time=str(time)))
     else:
         return render_template("sell.html")
 
@@ -308,13 +311,13 @@ def reset_password():
 
         # check if user name in db
         user = db.execute("SELECT username FROM users WHERE username = '{username}'".format(
-                          username=username_input))
+            username=username_input))
 
         if len(user) == 0:
             return render_template("reset_password.html", message_pas="user doesn't exist")
             # insert user data into the database
         db.execute("UPDATE users SET hash = '{password}' WHERE username = '{username}';".format(
-                   password=pwd_context.encrypt(password_input), username=username_input))
+            password=pwd_context.encrypt(password_input), username=username_input))
 
         return render_template("success.html", action="Password reset")
 
@@ -329,9 +332,14 @@ def get_transaction_param():
     price = lookup(request.form.get("stock"))["price"]
     paid = price * shares
     time = datetime.datetime.now()
-    cash = get_query_with_key(db.execute("SELECT cash FROM users WHERE id = '{id}'".format(id=session['user_id'])), "cash")
+    cash = get_query_with_key(db.execute("SELECT cash FROM users WHERE id = '{id}'".format(id=session['user_id'])),
+                              "cash")
     return stock, shares, price, paid, time, cash
 
 
 def get_query_with_key(query, key):
-    return dict(query[0])[key]
+    try:
+        return dict(query[0])[key]
+    except IndexError:
+        return "error"
+
