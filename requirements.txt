@@ -2,7 +2,7 @@ Django==1.10.5
 Flask==0.12
 Flask-SQLAlchemy==2.1
 Flask-Session==0.3.1
-Jinja2==2.9.5
+Jinja2==2.11.3
 MarkupSafe==0.23
 SQLAlchemy==1.1.5
 Werkzeug==0.11.15
