@@ -11,7 +11,7 @@ click==6.7
 colorama==0.2.5
 decorator==4.0.11
 getch==1.0
-html5lib==0.999
+html5lib==0.99999999
 ipython==1.2.1
 ipython-genutils==0.2.0
 itsdangerous==0.24
